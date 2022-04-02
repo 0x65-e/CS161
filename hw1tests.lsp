@@ -25,6 +25,8 @@
 (assert (equal (SUB-LIST '(a NIL b 3 2 NIL NIL 7) 2 4) '(b 3 2 NIL))) ; NIL atoms
 (print "All test cases passed for SUB-LIST")
 
+(assert (equal (SPLIT-LIST '(a)) '((a) NIL))) ; Single-element list
+(assert (equal (SPLIT-LIST 'NIL) '(NIL NIL))) ; Empty list case
 (assert (equal (SPLIT-LIST '(a b c d)) '((a b) (c d)))) ; Even length
 (assert (equal (SPLIT-LIST '(a b c d e)) '((a b c) (d e)))) ; Odd length
 (assert (equal (SPLIT-LIST '(a b c d e f)) '((a b c) (d e f))))
