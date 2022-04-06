@@ -58,9 +58,9 @@
 	; NIL otherwise.
 	(cond
 		((numberp TREE) (= N TREE))
-		((= N (cadr TREE)) 'T)
+		((= N (cadr TREE)) T)
 		((> N (cadr TREE)) (TREE-CONTAINS N (caddr TREE)))
-		('T (TREE-CONTAINS N (car TREE)))
+		(T (TREE-CONTAINS N (car TREE)))
 	)
 )
 
@@ -68,7 +68,7 @@
 	; Takes an ordered tree TREE and returns the maximum number in the tree
 	(cond
 		((numberp TREE) TREE)
-		('T (TREE-MAX (caddr TREE)))
+		(T (TREE-MAX (caddr TREE)))
 	)
 )
 
@@ -77,7 +77,7 @@
 	; numbers in the tree
 	(cond
 		((numberp TREE) (list TREE))
-		('T (append (TREE-ORDER (car TREE)) 
+		(T (append (TREE-ORDER (car TREE)) 
 			(TREE-ORDER (caddr TREE)) 
 			(list (cadr TREE))
 		))
@@ -90,10 +90,10 @@
 	; of length LEN (or less, if there are fewer than LEN elements). Indices
 	; start from 0. START and LEN must be non-negative.
 	(cond
-		((= LEN 0) 'NIL)
-		((null L) 'NIL)
+		((= LEN 0) NIL)
+		((null L) NIL)
 		((> START 0) (SUB-LIST (cdr L) (- START 1) LEN))
-		('T (cons (car L) (SUB-LIST (cdr L) START (- LEN 1))))
+		(T (cons (car L) (SUB-LIST (cdr L) START (- LEN 1))))
 	)
 )
 
@@ -106,7 +106,7 @@
 		(LL (length L))
 		(LEFT (cond
 			((oddp LL) (+ 1 (/ (- LL 1) 2)))
-			('T (/ LL 2))))
+			(T (/ LL 2))))
 		(RIGHT (- LL LEFT)))
 		(list (SUB-LIST L 0 LEFT) (SUB-LIST L LEFT RIGHT))
 	)
@@ -119,11 +119,11 @@
 		; Base case (atom)
 		((atom TREE) 0)
 		; Internal node
-		('T (let ((LHEIGHT (BTREE-HEIGHT (car TREE)))
+		(T (let ((LHEIGHT (BTREE-HEIGHT (car TREE)))
 				(RHEIGHT (BTREE-HEIGHT (cadr TREE))))
 				(cond
 					((> LHEIGHT RHEIGHT) (+ LHEIGHT 1))
-					('T (+ RHEIGHT 1))
+					(T (+ RHEIGHT 1))
 				)
 			)
 		)
@@ -139,7 +139,7 @@
 		(cond
 			((= LEN 1) (car LEAVES))
 			((= LEN 2) LEAVES)
-			('T (let ((HALVES (SPLIT-LIST LEAVES)))
+			(T (let ((HALVES (SPLIT-LIST LEAVES)))
 					(list (LIST2BTREE (car HALVES)) 
 						(LIST2BTREE (cadr HALVES)))
 				)
@@ -153,7 +153,7 @@
 	; right, depth-first.
 	(cond
 		((atom TREE) (list TREE))
-		('T (append (BTREE2LIST (car TREE)) (BTREE2LIST (cadr TREE))))
+		(T (append (BTREE2LIST (car TREE)) (BTREE2LIST (cadr TREE))))
 	)
 )
 
@@ -162,9 +162,9 @@
 	; All atoms in E1 and E2 must be numbers.
 	(cond
 		; Both empty lists
-		((and (null E1) (null E2)) 'T)
+		((and (null E1) (null E2)) T)
 		; Mismatch - only one list is empty
-		((or (null E1) (null E2)) 'NIL)
+		((or (null E1) (null E2)) NIL)
 		; Both numbers
 		((and (numberp E1) (numberp E2)) (= E1 E2))
 		; Both lists
@@ -172,7 +172,7 @@
 			(IS-SAME (car E1) (car E2)) 
 			(IS-SAME (cdr E1) (cdr E2))))
 		; Mismatch (list and number)
-		('T 'NIL)
+		(T NIL)
 	)
 )
 		
@@ -184,20 +184,20 @@
 		((null E1) (cond
 			; Base cases (empty list, single number atom)
 			((null E2) E2)
-			((numberp E2) (cons E2 'NIL))
+			((numberp E2) (cons E2 NIL))
 			; E2 is a list
-			('T (let ((HEAD (car E2)))
+			(T (let ((HEAD (car E2)))
 				(cond
 					; HEAD is a number, append it to the chain
 					((numberp HEAD) (cons HEAD (FLATTEN-APPEND E1 (cdr E2))))
 					; HEAD is a list
 					((null (cdr HEAD)) (FLATTEN-APPEND E1 
 						(cons (car HEAD) (cdr E2)))) ; One element list
-					('T (FLATTEN-APPEND E1 (cons (car HEAD) 
+					(T (FLATTEN-APPEND E1 (cons (car HEAD) 
 						(cons (cdr HEAD) (cdr E2))))) ; Multi element list
 				)
 			))
 		))
-		('T (append E1 (FLATTEN-APPEND 'NIL E2)))
+		(T (append E1 (FLATTEN-APPEND NIL E2)))
 	)
 )
