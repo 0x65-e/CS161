@@ -1,17 +1,43 @@
-; TODO: Write comments for functions
+; Solutions:
+;
+; BFS: If TREE is empty, return NIL. If TREE is an atom, return that atom in a
+; list. Otherwise, TREE must be a list. If the head is an atom, attach it to
+; the result of BFS on the remaining children. If the head is a list, append
+; its results to the remaining children (as they should be processed after
+; the children at this level - in effect a queue) and recurse.
+;
+; DFS: Like BFS, checks for an empty TREE or an atom and returns the same. If
+; TREE is a list, appends the results of a recursive call on the car with
+; the results of a recursive call on the cdr.
+;
+; DFSMAX: Operates similarly to DFS, but with a DEPTH parameter and in
+; right-to-left order. If DEPTH reaches less than zero, returns NIL.
+; To accomplish right-to-left ordering, appends the recursive results of the
+; cdr to the recursive results of the car. When descending on the car,
+; decreases DEPTH by 1.
+;
+; DFID: Most of the heavy lifting is done by DFMAX. If DEPTH is less than zero,
+; returns NIL. Otherwise, appends a recursive call (decreasing DEPTH by 1)
+; with a call to DFMAX at the current depth. This is to accomplish the correct
+; ordering of depth by 1, 2, ..., DEPTH.
 
 (defun BFS (TREE)
+	; Implement breadth-first search on a search tree TREE, which is either
+	; an atom or a list of child subtrees. Returns a list of terminal nodes
+	; in the order they are visited by a left-to-right BFS.
 	(cond
-		((null TREE) NIL)
-		((atom TREE) (LIST TREE))
+		((null TREE) NIL) ; End of child list
+		((atom TREE) (LIST TREE)) ; Leaf node
 		((atom (car TREE)) (cons (car TREE) (BFS (cdr TREE))))
 		; Head must be is a list
 		(T (BFS (append (cdr TREE) (car TREE))))
 	)
 )
 
-
 (defun DFS (TREE)
+	; Implement depth-first search on a search tree TREE (defined like BFS), 
+	; which is either an atom or a list of child subtrees. Returns a list of 
+	; terminal nodes in the order they are visited by a left-to-right DFS.
 	(cond
 		((null TREE) NIL) ; End of child list
 		((atom TREE) (LIST TREE)) ; Leaf node
@@ -20,6 +46,11 @@
 )
 
 (defun DFMAX (TREE DEPTH)
+	; This is a helper function for DFID that works the same as DFS (right
+	; to left instead of left to right), but will only recursively descend 
+	; DEPTH times. If DEPTH reaches less than zero, it returns NIL. Returns a
+	; list of terminal not mroe than DEPTH from the root in the order they
+	; are visited by a right-to-left DFS.
 	(cond
 		((< DEPTH 0) NIL)
 		((null TREE) NIL) ; End of child list
@@ -29,6 +60,10 @@
 )
 
 (defun DFID (TREE DEPTH)
+	; Takes a tree TREE (like BFS) and the maximum depth of the tree DEPTH. 
+	; Returns a list of terminal nodes visited in a right-to-left iterative-
+	; deepening search. Nodes visited multiple times will appear multiple times
+	; in the output list.
 	(cond
 		((< DEPTH 0) NIL)
 		(T (append (DFID TREE (- DEPTH 1)) (DFMAX TREE DEPTH)))
@@ -62,8 +97,6 @@
 ; To call MC-DFS to solve the original problem, one would call (MC-DFS '(3 3 T)
 ; NIL) -- however, it would be possible to call MC-DFS with a different initial
 ; state or with an initial path.
-
-; Examples of calls to some of the helper functions can be found after the code.
 
 
 
@@ -148,20 +181,3 @@
 		(T (mult-dfs (succ-fn s) (cons s path)))
 	)
 )
-
-
-; Function execution examples
-
-; Applying this operator would result in an invalid state, with more O's
-; than X's on the east side of the river.
-; (next-state '(3 3 t) 1 0) -> NIL
-
-; Applying this operator would result in one O and zero X on
-; the west side of the river, which is a legal operator. (NOTE that next-state
-; returns a LIST of successor states, even when there is only one successor)
-; (next-state '(3 3 t) 0 1) -> ((0 1 NIL))
-
-; succ-fn returns all of the legal states that can result from applying
-; operators to the current state.
-; (succ-fn '(3 3 t)) -> ((0 1 NIL) (1 1 NIL) (0 2 NIL))
-; (succ-fn '(1 1 t)) -> ((3 2 NIL) (3 3 NIL))
