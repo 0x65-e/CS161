@@ -1,18 +1,24 @@
 ; Test cases for hw2
 
-; TODO: Write more test cases
-
+(assert (equal (bfs 'A) '(A))) ; Single element case
 (assert (equal (bfs '((A (B)) C (D))) '(C A D B)))
+(assert (equal (bfs '((W X) (Y Z))) '(W X Y Z)))
 (assert (equal (bfs '(A (B C) (D) (E (F G)))) '(A B C D E F G)))
+(assert (equal (bfs '(A ((B) C) (D) (E ((F) G)))) '(A C D E B G F)))
 (print "All test cases passed for BFS")
 
+(assert (equal (dfs 'A) '(A))) ; Single element case
 (assert (equal (dfs '((A (B)) C (D))) '(A B C D)))
 (assert (equal (dfs '((W X) (Y Z))) '(W X Y Z)))
 (assert (equal (dfs '(A (B C) (D) (E (F G)))) '(A B C D E F G)))
 (print "All test cases passed for DFS")
 
+(assert (equal (dfid 'A 0) '(A))) ; Single element case
+(assert (equal (dfid '(A) 1) '(A))) ; Single element case
 (assert (equal (dfid '((A (B)) C (D)) 3) '(C D C A D C B A)))
+(assert (equal (dfid '((W X) (Y Z)) 2) '(Z Y X W)))
 (assert (equal (dfid '(A (B C) (D) (E (F G))) 2) '(A E D C B A)))
+(assert (equal (dfid '(A (B C) (D) (E (F G))) 3) '(A E D C B A G F E D C B A)))
 (print "All test cases passed for DFID")
 
 (assert (equal (final-state '(3 3 T)) NIL))
@@ -37,16 +43,21 @@
 (assert (equal (succ-fn '(1 1 t)) '((3 2 NIL) (3 3 NIL))))
 (print "All test cases passed for succ-fn")
 
+(assert (equal (on-path '(1 1 T) NIL) NIL))
 (assert (equal (on-path '(2 1 NIL) '((3 3 T) (2 1 NIL) (0 1 T))) T))
 (assert (equal (on-path '(2 1 NIL) '((3 2 NIL) (2 2 T) (1 0 NIL))) NIL))
 (print "All test cases passed for on-path")
 
-; Add test cases for mult-dfs
+(assert (equal (mult-dfs NIL NIL) NIL)) ; No successor states
+(assert (equal (mult-dfs '((3 3 NIL)) NIL) '((3 3 NIL)))) ; Final state correct
+(assert (equal (mult-dfs '((1 1 T)) '((3 2 NIL))) '((3 3 NIL) (1 1 T) (3 2 NIL)))) ; Valid solution
+(print "All test cases passed for mult-dfs")
 
-; Add more test cases for mc-dfs
 (assert (equal (mc-dfs '(3 3 T) NIL) '((3 3 NIL) (1 1 T) (3 2 NIL) (0 3 T) (3 1 NIL) (2 2 T) (2 2 NIL) (3 1 T) (0 3 NIL) (3 2 T) (1 1 NIL) (3 3 T)))) ; Just one valid solution, depending on the order of succ-fn
 (assert (equal (mc-dfs '(3 3 NIL) NIL) '((3 3 NIL)))) ; Start at final state
 (assert (equal (mc-dfs '(0 3 NIL) NIL) '((3 3 NIL) (1 1 T) (3 2 NIL) (0 3 T) (3 1 NIL) (2 2 T) (2 2 NIL) (3 1 T) (0 3 NIL))))
 (assert (equal (mc-dfs '(3 0 NIL) NIL) NIL)) ; Impossible state
 (assert (equal (mc-dfs '(0 3 NIL) '((3 2 T) (0 2 NIL) (3 3 T))) '((3 3 NIL) (1 1 T) (3 2 NIL) (0 3 T) (3 1 NIL) (2 2 T) (2 2 NIL) (3 1 T) (0 3 NIL) (3 2 T) (0 2 NIL) (3 3 T))))
 (print "All test cases passed for mc-dfs")
+
+(print "ALL TEST CASES PASSED")
