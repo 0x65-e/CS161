@@ -40,23 +40,22 @@
 ; For reloading modified code.
 ; I found this easier than typing (load "filename") every time. 
 ;
-(defun reload()
-  (load "hw3.lsp")
-  )
+(defun reload ()
+  (load "hw3.lsp"))
 
 ;
 ; For loading a-star.lsp.
 ;
-(defun load-a-star()
+(defun load-a-star ()
   (load "a-star.lsp"))
 
 ;
 ; Reloads hw3.lsp and a-star.lsp
 ;
-(defun reload-all()
+(defun reload-all ()
   (reload)
   (load-a-star)
-  )
+)
 
 ;
 ; A shortcut function.
@@ -65,8 +64,7 @@
 ; 
 ;
 (defun sokoban (s h)
-  (a* s #'goal-test #'next-states h)
-  )
+  (a* s #'goal-test #'next-states h))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; end general utility functions
@@ -138,13 +136,13 @@
 (defun getKeeperPosition (s row)
   (cond ((null s) nil)
 	(t (let ((x (getKeeperColumn (car s) 0)))
-	     (if x
-		 ;keeper is in this row
-		 (list x row)
-		 ;otherwise move on
-		 (getKeeperPosition (cdr s) (+ row 1))
-		 );end if
-	       );end let
+			(if x
+				;keeper is in this row
+				(list x row)
+				;otherwise move on
+				(getKeeperPosition (cdr s) (+ row 1))
+			);end if
+	     );end let
 	 );end t
 	);end cond
   );end defun
@@ -167,6 +165,37 @@
 	   );end t
 	);end cond
   );end 
+  
+;
+; countListContents (lst elem count)
+; Counts the number of times that elem appears in a list lst and adds it count.
+;
+; lst is a list (single level) and elem is an integer. Elements are compared using (=).
+; count is a running sum of the number of times elem has already appeared in the list.
+; Helper function for countStateContents.
+;
+(defun countListContents (lst elem count)
+	(cond
+		((null lst) count)
+		((= (car lst) elem) (countListContents (cdr lst) elem (+ 1 count)))
+		(t (countListContents (cdr lst) elem count))
+	)
+)
+
+;
+; countStateContents (s elem count)
+; Counts the number of times that elem appears in the state s and adds it to count.
+;
+; s is assumed to be a valid state (a list of lists) and elem is an integer. 
+; Elements are compared using (=). count is a running sum of the number of times 
+; elem has already appeared in the state (to allow for tail call recursion if present)
+;
+(defun countStateContents (s elem count)
+	(cond
+		((null s) count)
+		(t (countStateContents (cdr s) elem (countListContents (car s) elem count)))
+	)
+)
 
 ; EXERCISE: Modify this function to return true (t)
 ; if and only if s is a goal state of the game.
@@ -177,11 +206,11 @@
 ; terminate until the whole search space is exhausted.
 ;
 (defun goal-test (s)
-  nil
+  (and (= 0 (countStateContents s box 0)) (= 0 (countStateContents s keeper 0)))
   );end defun
 
 ; EXERCISE: Modify this function to return the list of 
-; sucessor states of s.
+; successor states of s.
 ;
 ; This is the top-level next-states (successor) function.
 ; Some skeleton code is provided below.
@@ -214,13 +243,18 @@
 ; admissible heuristic.
 ;
 (defun h0 (s)
-  )
+	0
+)
 
 ; EXERCISE: Modify this function to compute the 
 ; number of misplaced boxes in s.
 ;
 (defun h1 (s)
-  )
+	; This is an admissable heuristic. Every box that is not on a goal must be moved at least
+	; once, therefore it will require at least that many steps to solve the puzzle, and never
+	; more than that many steps since only one box can be moved at a time.
+	(+ countStateContents s box)
+)
 
 ; EXERCISE: Modify this h2 function to compute an
 ; admissible heuristic value of s. 
