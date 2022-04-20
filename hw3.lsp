@@ -117,6 +117,10 @@
 (defun isKeeperStar (v)
   (= v keeperstar)
   )
+  
+(defun isAnyBox (v)
+	(or (= v box) (= v boxstar))
+)
 
 ;
 ; Helper function of getKeeperPosition
@@ -183,7 +187,7 @@
 ;
 (defun countListContents (lst elem cnt)
 	(cond
-		((null lst) count)
+		((null lst) cnt)
 		((= (car lst) elem) (countListContents (cdr lst) elem (+ 1 cnt)))
 		(t (countListContents (cdr lst) elem cnt))
 	)
@@ -393,6 +397,8 @@
 	)
 )
 
+; use length to get the length of the list as bounds
+
 ; EXERCISE: Modify this function to return the list of 
 ; successor states of s.
 ;
@@ -442,36 +448,147 @@
 )
 
 ;
-; findListContents (lst x y elem coords)
-; Finds the coordinates of every elem in a list lst and adds it the list coords. x and y are the
-; coordinates of the first element in the list.
+; findListContents (lst x y boxes stars)
+; Finds the coordinates of every box and star in a list lst and adds it the lists boxes and stars. 
+; x and y are the coordinates of the first element in the list.
 ;
 ; lst is a list (single level) and elem is an integer. Elements are compared using (=).
-; coords is a running list of the coordinates of previous times elem has appeared in the list.
+; boxes is a running list of the coordinates of previous boxes in the list, and similarly for stars.
 ; Helper function for findStateContents.
 ;
-(defun findListContents (lst x y elem coords)
+(defun findListContents (lst x y boxes stars)
 	(cond
-		((null lst) coords)
-		((= (car lst) elem) (findListContents (cdr lst) (+ x 1) y elem (cons (list x y) coords)))
-		(t (findListContents (cdr lst) (+ x 1) y elem coords))
+		((null lst) (list boxes stars))
+		((= (car lst) box) (findListContents (cdr lst) (+ x 1) y (cons (list x y) boxes) stars))
+		((= (car lst) star) (findListContents (cdr lst) (+ x 1) y boxes (cons (list x y) stars)))
+		(t (findListContents (cdr lst) (+ x 1) y boxes stars))
 	)
 )
 
 ;
-; findStateContents (s y elem coords)
-; Finds the coordinates of every elem that appears in the state s and adds it to the list coods.
-; y is the index of the first element in the state.
+; findStateContents (s y boxes stars)
+; Finds the coordinates of every box and star that appears in the state s and adds it to the lists boxes
+; and stars. y is the (row) index of the first element in the state.
 ;
 ; s is assumed to be a valid state (a list of lists) and elem is an integer. 
-; Elements are compared using (=). coords is a running list of the coordinates of previous times
-; elem has appeared in the state (to allow for tail call recursion if present).
+; Elements are compared using (=). boxes is a running list of the coordinates of previous boxes
+; in the state, and similarly for stars (to allow for tail call recursion if present).
 ; Helper function for h2.
 ;
-(defun findStateContents (s y elem coords)
+(defun findStateContents (s y boxes stars)
 	(cond
-		((null s) coords)
-		(t (findStateContents (cdr s) (+ y 1) elem (findListContents (car s) 0 y elem coords)))
+		((null s) (list boxes stars))
+		(t (let* ((rowResults (findListContents (car s) 0 y boxes stars))
+				(nboxes (car rowResults))
+				(nstars (cadr rowResults)))
+			(findStateContents (cdr s) (+ y 1) nboxes nstars))
+		)
+	)
+)
+
+;
+; get-square (s r c)
+; Gets the square in s located at row r and column c. If (c r) is out of bounds, returns a wall instead.
+;
+; Helper function for is-deadlocked.
+;
+(defun get-square (s r c)
+	(cond
+		((< r 0) wall)
+		((< c 0) wall)
+		(T (let ((sq (car (nthcdr c (car (nthcdr r s))))))
+			(if (null sq) wall sq)
+			)
+		)
+	)
+)
+
+;
+; set-element (lst i elem)
+; Returns a copy of lst with element i equal to elem. If i is out of bounds, returns lst.
+;
+; Helper function for set-square.
+;
+(defun set-element (lst i elem)
+	(cond
+		((null lst) lst)
+		((> i 0) (cons (car lst) (set-element (cdr lst) (- i 1) elem)))
+		(T (cons elem (cdr lst)))
+	)
+)
+
+;
+; set-square (s r c elem)
+; Returns a copy of s with the element at (c r) equal to elem. If (c r) is out of bounds, returns s.
+;
+; Helper function for is-deadlocked.
+;
+(defun set-square (s r c elem)
+	(cond
+		((null s) s)
+		((< r 0) s)
+		((< c 0) s)
+		((> r 0) (cons (car s) (set-square (cdr s) (- r 1) c elem)))
+		(T (cons (set-element (car s) c elem) (cdr s)))
+	)
+)
+
+;
+; is-deadlocked-axis (s p axis)
+; Checks if the point at p in s is deadlocked along axis (0 = horizontal, 1 = vertical). A box is
+; deadlocked if there are walls or deadlocked boxes vertically or horizontally.
+;
+; Helper function for sum-min-dist.
+;
+(defun is-deadlocked-axis (s p axis)
+	(let ((x (car p)) (y (cadr p)))
+		(if (= axis 0) ; 0 is the x axis
+			(let ((left (get-square s y (- x 1)))
+				(right (get-square s y (+ x 1))))
+				(or (isWall left) (isWall right)
+					(and (isAnyBox left) (is-deadlocked-axis (set-square s y x wall) (list (- x 1) y) 1)) ; Need to update state
+					(and (isAnyBox right) (is-deadlocked-axis (set-square s y x wall) (list (+ x 1) y) 1))
+				)
+			)
+			(let ((down (get-square s (- y 1) x))
+				(up (get-square s (+ y 1) x)))
+				(or (isWall down) (isWall up) 
+					(and (isAnyBox down) (is-deadlocked-axis (set-square s y x wall) (list x (- y 1)) 0))
+					(and (isAnyBox up) (is-deadlocked-axis (set-square s y x wall) (list x (+ y 1)) 0))
+				)
+			)
+		)
+	)
+)
+
+;
+; is-deadlocked-2 (s p)
+; Convenience function to check both axes with is-deadlocked-axis. Alternative to is-deadlocked, which
+; checks for deadlock by walls and other boxes.
+;
+; Helper function for sum-min-dist.
+;
+(defun is-deadlocked-2 (s p)
+	(and (is-deadlocked-axis s p 0) (is-deadlocked-axis s p 1))
+)
+
+;
+; is-deadlocked (s p)
+; Checks if the point at p is deadlocked in the "corner" of walls, e.g has one wall vertical and one
+; horizontally.
+;
+; Helper function for sum-min-dist.
+;
+(defun is-deadlocked (s p)
+	(let* ((x (car p))
+		(y (cadr p))
+		(left (get-square s y (- x 1)))
+		(up (get-square s (- y 1) x))
+		(right (get-square s y (+ x 1)))
+		(down (get-square s (+ y 1) x))
+		(vert (or (isWall up) (isWall down)))
+		(horiz (or (isWall left) (isWall right))))
+		(and vert horiz)
 	)
 )
 
@@ -502,15 +619,18 @@
 ;
 ; sum-min-dist (points targets sum-dist)
 ; Sums the minimum distance from all the 2D points in points to any of the 2D points in targets
-; (repetitions allowed - i.e. not one-to-one mapping)
+; (repetitions allowed - i.e. not one-to-one mapping). If any of the points is deadlocked by walls (and is
+; unmoveable), returns 3500 instead.
 ;
 ; sum-dist is the running sum of the minimum distances so far.
 ; Helper function for h2.
 ;
-(defun sum-min-dist (points targets sum-dist)
+(defun sum-min-dist (points targets s sum-dist)
 	(cond
 		((null points) sum-dist)
-		(T (sum-min-dist (cdr points) targets (+ sum-dist (min-dist (car points) (cdr targets) (distance (car points) (car targets))))))
+		;((is-deadlocked s (car points)) 3500)
+		((is-deadlocked-2 s (car points)) 3500)
+		(T (sum-min-dist (cdr points) targets s (+ sum-dist (min-dist (car points) (cdr targets) (distance (car points) (car targets))))))
 	)
 )
 
@@ -526,9 +646,10 @@
 	; This heuristic counts the manhattan distance from every unmatched box to the nearest unoccupied
 	; goal. This is an admissable heuristic, since that is the minimum number of steps for every box
 	; to reach a goal.
-	(let ((boxes (findStateContents s 0 box nil))
-		(goals (findStateContents s 0 star nil)))
-		(sum-min-dist boxes goals 0)
+	(let* ((counts (findStateContents s 0 nil nil))
+		(boxes (car counts))
+		(goals (cadr counts)))
+		(sum-min-dist boxes goals s 0)
 	)
 )
 

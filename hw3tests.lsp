@@ -66,6 +66,20 @@
 (assert (equal (replaceRowSeq '((1 2 3) (4 5 6) (7 8 9)) 1 1 '()) '((1 2 3) (4 5 6) (7 8 9))))
 (print "All test cases passed for replaceRowSeq")
 
+(assert (equal (get-square '((1 2 3) (4 5 6) (7 8 9)) 1 1) 5))
+(assert (equal (get-square '((1 2 3) (4 5 6) (7 8 9)) 5 1) wall))
+(assert (equal (get-square '((1 2 3) (4 5 6) (7 8 9)) 1 5) wall))
+(assert (equal (get-square '((1 2 3) (4 5 6) (7 8 9)) -1 -1) wall))
+(assert (equal (get-square '((1 2 3) (4 5 6) (7 8 9)) 2 2) 9))
+(print "All test cases passed for get-square")
+
+(assert (equal (set-square '((1 2 3) (4 5 6) (7 8 9)) 1 1 21) '((1 2 3) (4 21 6) (7 8 9))))
+(assert (equal (set-square '((1 2 3) (4 5 6) (7 8 9)) 5 1 12) '((1 2 3) (4 5 6) (7 8 9))))
+(assert (equal (set-square '((1 2 3) (4 5 6) (7 8 9)) 1 5 14) '((1 2 3) (4 5 6) (7 8 9))))
+(assert (equal (set-square '((1 2 3) (4 5 6) (7 8 9)) -1 -1 12) '((1 2 3) (4 5 6) (7 8 9))))
+(assert (equal (set-square '((1 2 3) (4 5 6) (7 8 9)) 2 0 0) '((1 2 3) (4 5 6) (0 8 9))))
+(print "All test cases passed for set-square")
+
 (setq s1 '((1 1 1 1 1)
 			(1 4 0 0 1)
 			(1 0 2 0 1)
