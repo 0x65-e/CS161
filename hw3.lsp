@@ -46,6 +46,9 @@
 (defun test ()
 	(load "hw3tests.lsp"))
 
+(defun load-games ()
+	(load "hw3games.lsp"))
+
 ;
 ; For loading a-star.lsp.
 ;
@@ -139,10 +142,10 @@
 ;
 (defun getKeeperPosition (s row)
   (cond ((null s) nil)
-	(t (let* ((x (getKeeperColumn (car s) 0)) (c (car x)) (star (cadr x)))
+	(t (let* ((x (getKeeperColumn (car s) 0)) (c (car x)) (wasstar (cadr x)))
 			(if c
 				;keeper is in this row
-				(list c row star)
+				(list c row wasstar)
 				;otherwise move on
 				(getKeeperPosition (cdr s) (+ row 1))
 			);end if
@@ -321,8 +324,8 @@
 ; If the move is invalid, NIL is returned.
 ; Helper function for try-move.
 (defun validateMove (s)
-	(let ((s2 (car s))
-		(s1 (cadr s)))
+	(let ((s1 (car s))
+		(s2 (cadr s)))
 		(cond
 			((null s1) nil) ; We're out of bounds
 			((isWall s1) nil) ; Can't move into a wall
@@ -340,6 +343,15 @@
 )
 
 ;
+; swap (s)
+; Swaps the two-element list s, so the first element becomes the second and vice-versa.
+;
+; Helper function of getDirection.
+(defun swap (s)
+	(list (cadr s) (car s))
+)
+
+;
 ; getDirection (s x y dir)
 ; Gets the two squares starting from (x, y) in the direction of dir
 ;
@@ -348,17 +360,24 @@
 (defun getDirection (s x y dir)
 	(cond
 		((= dir 0) (getRowSeq s y (- x 2) 2 nil))
-		((= dir 1) (getColSeq s x (- y 2) 2 nil))
-		((= dir 2) (getRowSeq s y x 2 nil))
-		(T (getColSeq s x y 2 nil))
+		((= dir 1) (getColumnSeq s x (- y 2) 2 nil))
+		((= dir 2) (swap (getRowSeq s y (+ x 1) 2 nil)))
+		(T (swap (getColumnSeq s x (+ y 1) 2 nil)))
 	)
 )
 
-(defun try-move (s x y dir star)
+(defun try-move (s x y dir wasstar)
 	(let ((newState (validateMove (getDirection s x y dir))))
 		(cond
 			((null newState) nil)
-			(T s) ; update state
+			(T (let ((keepersquare (if wasstar star blank)))
+				(cond
+					((= dir 0) (replaceRowSeq s y (- x 2) (append (swap newState) (list keepersquare))))
+					((= dir 1) (replaceColSeq s x (- y 2) (append (swap newState) (list keepersquare))))
+					((= dir 2) (replaceRowSeq s y x (cons keepersquare newState)))
+					(T (replaceColSeq s x y (cons keepersquare newState)))
+				)
+			))
 		)
 	)
 )
@@ -387,8 +406,8 @@
 	 (x (car pos))
 	 (y (cadr pos))
 	 ;x and y are now the coordinate of the keeper in s.
-	 (star (caddr pos))
-	 (result nil)
+	 (wasstar (caddr pos))
+	 (result (list (try-move s x y 1 wasstar) (try-move s x y 2 wasstar) (try-move s x y 3 wasstar) (try-move s x y 0 wasstar)))
 	 )
     (cleanUpList result);end
    );end let
@@ -408,7 +427,7 @@
 	; This is an admissable heuristic. Every box that is not on a goal must be moved at least
 	; once, therefore it will require at least that many steps to solve the puzzle, and never
 	; more than that many steps since only one box can be moved at a time.
-	(+ countStateContents s box)
+	(countStateContents s box 0)
 )
 
 ; EXERCISE: Modify this h2 function to compute an
