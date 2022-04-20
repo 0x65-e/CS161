@@ -174,33 +174,35 @@
   );end 
  
 ;
-; countListContents (lst elem count)
-; Counts the number of times that elem appears in a list lst and adds it count.
+; countListContents (lst elem cnt)
+; Counts the number of times that elem appears in a list lst and adds it cnt.
 ;
 ; lst is a list (single level) and elem is an integer. Elements are compared using (=).
-; count is a running sum of the number of times elem has already appeared in the list.
+; cnt is a running sum of the number of times elem has already appeared in the list.
 ; Helper function for countStateContents.
 ;
-(defun countListContents (lst elem count)
+(defun countListContents (lst elem cnt)
 	(cond
 		((null lst) count)
-		((= (car lst) elem) (countListContents (cdr lst) elem (+ 1 count)))
-		(t (countListContents (cdr lst) elem count))
+		((= (car lst) elem) (countListContents (cdr lst) elem (+ 1 cnt)))
+		(t (countListContents (cdr lst) elem cnt))
 	)
 )
 
 ;
-; countStateContents (s elem count)
-; Counts the number of times that elem appears in the state s and adds it to count.
+; countStateContents (s elem cnt)
+; Counts the number of times that elem appears in the state s and adds it to cnt.
 ;
 ; s is assumed to be a valid state (a list of lists) and elem is an integer. 
-; Elements are compared using (=). count is a running sum of the number of times 
-; elem has already appeared in the state (to allow for tail call recursion if present)
+; Elements are compared using (=). cnt is a running sum of the number of times 
+; elem has already appeared in the state (to allow for tail call recursion if present).
+; Helper function for goal-test.
 ;
-(defun countStateContents (s elem count)
+(defun countStateContents (s elem cnt)
 	(cond
-		((null s) count)
-		(t (countStateContents (cdr s) elem (countListContents (car s) elem count)))
+		((null s) cnt)
+		(t (countStateContents (cdr s) elem (+ cnt (count elem (car s)))))
+		;(t (countStateContents (cdr s) elem (countListContents (car s) elem cnt)))
 	)
 )
 
@@ -226,6 +228,7 @@
 ; If a subsequence extends beyond the end of the column, the elements will be nill
 ; (i.e. the length of the returned list is guaranteed to be length of hist + len).
 ; Similarly if start is less than zero.
+;
 (defun getColumnSeq (s col start len hist)
 	(cond
 		((= len 0) hist)
@@ -243,6 +246,7 @@
 ; If len extends beyond the end of lst, remaining elements will be null (i.e. the length of 
 ; the returned list is guaranteed to be length of hist + len). Simiarly if start < 0.
 ; Helper function for getRowSeq.
+;
 (defun getSubSeq (lst start len hist)
 	(cond
 		((= len 0) hist)
@@ -261,6 +265,7 @@
 ; first element is zero. If a subsequence extends beyond the end of a row, remaining elements 
 ; will be null (i.e. the length of the returned list is guaranteed to be length of hist + len).
 ; Similarly for start < 0.
+;
 (defun getRowSeq (s row start len hist)
 	(getSubSeq (car (nthcdr row s)) start len hist)
 )
@@ -271,7 +276,8 @@
 ; the elements in lst will be replaced.
 ;
 ; Negative starts are permitted, in which case the first elements of repl will be omitted.
-; Helper function for replaceColSeq and replaceRowSeq
+; Helper function for replaceColSeq and replaceRowSeq.
+;
 (defun replaceSubSeq (lst start repl)
 	(cond
 		((null repl) lst)
@@ -290,6 +296,7 @@
 ;
 ; Negative starts are permitted, in which case the first elements of repl will be omitted.
 ; Helper function for try-move.
+;
 (defun replaceColSeq (s col start repl)
 	(cond
 		((null repl) s)
@@ -307,6 +314,7 @@
 ;
 ; Negative starts are permitted, in which case the first elements of repl will be omitted.
 ; Helper function for try-move.
+;
 (defun replaceRowSeq (s row start repl)
 	(cond
 		((null s) s)
@@ -323,6 +331,7 @@
 ; is valid, a two-element list is returned (possibly with NIL values).
 ; If the move is invalid, NIL is returned.
 ; Helper function for try-move.
+;
 (defun validateMove (s)
 	(let ((s1 (car s))
 		(s2 (cadr s)))
@@ -346,7 +355,8 @@
 ; swap (s)
 ; Swaps the two-element list s, so the first element becomes the second and vice-versa.
 ;
-; Helper function of getDirection.
+; Helper function of getDirection and try-move.
+;
 (defun swap (s)
 	(list (cadr s) (car s))
 )
@@ -356,7 +366,8 @@
 ; Gets the two squares starting from (x, y) in the direction of dir
 ;
 ; dir 0 is left, 1 is up, 2 is right, and 3 is down
-; Helper function for tryMove
+; Helper function for tryMove.
+;
 (defun getDirection (s x y dir)
 	(cond
 		((= dir 0) (getRowSeq s y (- x 2) 2 nil))
@@ -430,6 +441,79 @@
 	(countStateContents s box 0)
 )
 
+;
+; findListContents (lst x y elem coords)
+; Finds the coordinates of every elem in a list lst and adds it the list coords. x and y are the
+; coordinates of the first element in the list.
+;
+; lst is a list (single level) and elem is an integer. Elements are compared using (=).
+; coords is a running list of the coordinates of previous times elem has appeared in the list.
+; Helper function for findStateContents.
+;
+(defun findListContents (lst x y elem coords)
+	(cond
+		((null lst) coords)
+		((= (car lst) elem) (findListContents (cdr lst) (+ x 1) y elem (cons (list x y) coords)))
+		(t (findListContents (cdr lst) (+ x 1) y elem coords))
+	)
+)
+
+;
+; findStateContents (s y elem coords)
+; Finds the coordinates of every elem that appears in the state s and adds it to the list coods.
+; y is the index of the first element in the state.
+;
+; s is assumed to be a valid state (a list of lists) and elem is an integer. 
+; Elements are compared using (=). coords is a running list of the coordinates of previous times
+; elem has appeared in the state (to allow for tail call recursion if present).
+; Helper function for h2.
+;
+(defun findStateContents (s y elem coords)
+	(cond
+		((null s) coords)
+		(t (findStateContents (cdr s) (+ y 1) elem (findListContents (car s) 0 y elem coords)))
+	)
+)
+
+;
+; difference (s1 s2)
+; Calculates the manhattan distance between two dimensional points s1 and s2
+;
+; Helper function for min-dist and sum-min-dist.
+;
+(defun distance (s1 s2)
+	(+ (abs (- (car s1) (car s2))) (abs (- (cadr s1) (cadr s2))))
+)
+
+;
+; min-dist (point targets rmin)
+; Gets the minimum distance from 2D point to any of the 2D points in targets. Rmin is the running min.
+;
+; Be careful not to set rmin to too small a value, as that will effectively floor out the minimum.
+; Helper function for sum-min-dist.
+;
+(defun min-dist (point targets rmin)
+	(cond
+		((null targets) rmin)
+		(T (min-dist point (cdr targets) (min rmin (distance point (car targets)))))
+	)
+)
+
+;
+; sum-min-dist (points targets sum-dist)
+; Sums the minimum distance from all the 2D points in points to any of the 2D points in targets
+; (repetitions allowed - i.e. not one-to-one mapping)
+;
+; sum-dist is the running sum of the minimum distances so far.
+; Helper function for h2.
+;
+(defun sum-min-dist (points targets sum-dist)
+	(cond
+		((null points) sum-dist)
+		(T (sum-min-dist (cdr points) targets (+ sum-dist (min-dist (car points) (cdr targets) (distance (car points) (car targets))))))
+	)
+)
+
 ; EXERCISE: Modify this h2 function to compute an
 ; admissible heuristic value of s. 
 ; 
@@ -439,7 +523,14 @@
 ; running time of a function call.
 ;
 (defun h2 (s)
-  )
+	; This heuristic counts the manhattan distance from every unmatched box to the nearest unoccupied
+	; goal. This is an admissable heuristic, since that is the minimum number of steps for every box
+	; to reach a goal.
+	(let ((boxes (findStateContents s 0 box nil))
+		(goals (findStateContents s 0 star nil)))
+		(sum-min-dist boxes goals 0)
+	)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
