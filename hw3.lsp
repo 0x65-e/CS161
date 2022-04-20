@@ -42,6 +42,9 @@
 ;
 (defun reload ()
   (load "hw3.lsp"))
+  
+(defun test ()
+	(load "hw3tests.lsp"))
 
 ;
 ; For loading a-star.lsp.
@@ -118,7 +121,7 @@
 (defun getKeeperColumn (r col)
   (cond ((null r) nil)
 	(t (if (or (isKeeper (car r)) (isKeeperStar (car r)))
-	       col
+	       (list col (isKeeperStar (car r)))
 	     (getKeeperColumn (cdr r) (+ col 1))
 	     );end if
 	   );end t
@@ -127,18 +130,19 @@
 
 ;
 ; getKeeperPosition (s firstRow)
-; Returns a list indicating the position of the keeper (c r).
+; Returns a list indicating the position of the keeper (c r star).
 ; 
 ; Assumes that the keeper is in row >= firstRow.
 ; The top row is the zeroth row.
 ; The first (left) column is the zeroth column.
+; star is T if the keeper is standing on a goal spot, NIL otherwise.
 ;
 (defun getKeeperPosition (s row)
   (cond ((null s) nil)
-	(t (let ((x (getKeeperColumn (car s) 0)))
-			(if x
+	(t (let* ((x (getKeeperColumn (car s) 0)) (c (car x)) (star (cadr x)))
+			(if c
 				;keeper is in this row
-				(list x row)
+				(list c row star)
 				;otherwise move on
 				(getKeeperPosition (cdr s) (+ row 1))
 			);end if
@@ -165,7 +169,7 @@
 	   );end t
 	);end cond
   );end 
-  
+ 
 ;
 ; countListContents (lst elem count)
 ; Counts the number of times that elem appears in a list lst and adds it count.
@@ -209,6 +213,156 @@
   (and (= 0 (countStateContents s box 0)) (= 0 (countStateContents s keeper 0)))
   );end defun
 
+;
+; getColumnSeq (s col row len hist)
+; Returns a reversed subsequence from column index col (of the two-layer list s), starting at 
+; index start and of length len, appended to hist.
+;
+; s is assumed to be a valid state (e.g. a two-layer list where each row is the same length).
+; The left-most column is column zero, and the first element of that column is index 0.
+; If a subsequence extends beyond the end of the column, the elements will be nill
+; (i.e. the length of the returned list is guaranteed to be length of hist + len).
+; Similarly if start is less than zero.
+(defun getColumnSeq (s col start len hist)
+	(cond
+		((= len 0) hist)
+		((< start 0) (getColumnSeq s col (+ start 1) (- len 1) (cons nil hist)))
+		((> start 0) (getColumnSeq (cdr s) col (- start 1) len hist))
+		(T (getColumnSeq (cdr s) col start (- len 1) (cons (car (nthcdr col (car s))) hist)))
+	)
+)
+
+;
+; getSubSeq (lst start len hist)
+; Gets a reversed subsequence from lst starting at start of length len, appended to hist.
+;
+; Hist is assumed to be a valid list. The first element is element zero. 
+; If len extends beyond the end of lst, remaining elements will be null (i.e. the length of 
+; the returned list is guaranteed to be length of hist + len). Simiarly if start < 0.
+; Helper function for getRowSeq.
+(defun getSubSeq (lst start len hist)
+	(cond
+		((= len 0) hist)
+		((< start 0) (getSubSeq lst (+ start 1) (- len 1) (cons nil hist)))
+		((> start 0) (getSubSeq (cdr lst) (- start 1) len hist))
+		(T (getSubSeq (cdr lst) start (- len 1) (cons (car lst) hist)))
+	)
+)
+
+;
+; getRowSeq (s row start len hist)
+; Gets a reversed subsequence from row index row (of the two-layer list s), starting at index 
+; start and of length len, appended to hist.
+;
+; s is assumed to be a valid state (e.g. a two-layer list). The first row is row 0, and the 
+; first element is zero. If a subsequence extends beyond the end of a row, remaining elements 
+; will be null (i.e. the length of the returned list is guaranteed to be length of hist + len).
+; Similarly for start < 0.
+(defun getRowSeq (s row start len hist)
+	(getSubSeq (car (nthcdr row s)) start len hist)
+)
+
+;
+; replaceSubSeq (lst start repl)
+; Replace the subsequence in lst starting at start with repl. If repl is longer than lst, only
+; the elements in lst will be replaced.
+;
+; Negative starts are permitted, in which case the first elements of repl will be omitted.
+; Helper function for replaceColSeq and replaceRowSeq
+(defun replaceSubSeq (lst start repl)
+	(cond
+		((null repl) lst)
+		((null lst) lst)
+		((< start 0) (replaceSubSeq lst (+ start 1) (cdr repl)))
+		((> start 0) (cons (car lst) (replaceSubSeq (cdr lst) (- start 1) repl)))
+		(T (cons (car repl) (replaceSubSeq (cdr lst) start (cdr repl))))
+	)
+)
+
+;
+; replaceColSeq (s col start repl)
+; Replaces the subsequence in column index col of state s starting at row index start with
+; the contents of repl. If repl is longer than the column, only the elements in the column 
+; will be replaced.
+;
+; Negative starts are permitted, in which case the first elements of repl will be omitted.
+; Helper function for try-move.
+(defun replaceColSeq (s col start repl)
+	(cond
+		((null repl) s)
+		((null s) s)
+		((< start 0) (replaceColSeq s col (+ start 1) (cdr repl)))
+		((> start 0) (cons (car s) (replaceColSeq (cdr s) col (- start 1) repl)))
+		(T (cons (replaceSubSeq (car s) col (list (car repl))) (replaceColSeq (cdr s) col start (cdr repl))))
+	)
+)
+
+;
+; replaceRowSeq (s row start repl)
+; Replaces the subsequence in row index row of state s starting at index start with the contents
+; of repl. If repl is longer than the row, only the elements in the row will be replaced.
+;
+; Negative starts are permitted, in which case the first elements of repl will be omitted.
+; Helper function for try-move.
+(defun replaceRowSeq (s row start repl)
+	(cond
+		((null s) s)
+		((> row 0) (cons (car s) (replaceRowSeq (cdr s) (- row 1) start repl)))
+		(T (cons (replaceSubSeq (car s) start repl) (cdr s)))
+	)
+)
+
+;
+; validateMove (s)
+; Checks if a valid move can be performed, and if so, returns the updated state after movement.
+;
+; s is a two-element list of the two square states in the direction of movement. If the move
+; is valid, a two-element list is returned (possibly with NIL values).
+; If the move is invalid, NIL is returned.
+; Helper function for try-move.
+(defun validateMove (s)
+	(let ((s2 (car s))
+		(s1 (cadr s)))
+		(cond
+			((null s1) nil) ; We're out of bounds
+			((isWall s1) nil) ; Can't move into a wall
+			((isStar s1) (list keeperstar s2))
+			((isBlank s1) (list keeper s2))
+			(T (cond ; s1 must be a box or boxstar
+				((or (null s2) (isWall s2) (isBox s2) (isBoxStar s2)) NIL) ; Can't push box into those
+				((and (isBox s1) (isBlank s2)) (list keeper box))
+				((and (isBoxStar s1) (isBlank s2)) (list keeperstar box))
+				((and (isBox s1) (isStar s2)) (list keeper boxstar))
+				(T (list keeperstar boxstar))
+			))
+		)
+	)
+)
+
+;
+; getDirection (s x y dir)
+; Gets the two squares starting from (x, y) in the direction of dir
+;
+; dir 0 is left, 1 is up, 2 is right, and 3 is down
+; Helper function for tryMove
+(defun getDirection (s x y dir)
+	(cond
+		((= dir 0) (getRowSeq s y (- x 2) 2 nil))
+		((= dir 1) (getColSeq s x (- y 2) 2 nil))
+		((= dir 2) (getRowSeq s y x 2 nil))
+		(T (getColSeq s x y 2 nil))
+	)
+)
+
+(defun try-move (s x y dir star)
+	(let ((newState (validateMove (getDirection s x y dir))))
+		(cond
+			((null newState) nil)
+			(T s) ; update state
+		)
+	)
+)
+
 ; EXERCISE: Modify this function to return the list of 
 ; successor states of s.
 ;
@@ -233,6 +387,7 @@
 	 (x (car pos))
 	 (y (cadr pos))
 	 ;x and y are now the coordinate of the keeper in s.
+	 (star (caddr pos))
 	 (result nil)
 	 )
     (cleanUpList result);end
