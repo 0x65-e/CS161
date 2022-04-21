@@ -42,10 +42,16 @@
 ;
 (defun reload ()
   (load "hw3.lsp"))
-  
+
+;
+; Load test runner script
+;
 (defun test ()
 	(load "hw3tests.lsp"))
 
+;
+; Load heurstic game-play time comparison script
+;
 (defun load-games ()
 	(load "hw3games.lsp"))
 
@@ -117,7 +123,7 @@
 (defun isKeeperStar (v)
   (= v keeperstar)
   )
-  
+
 (defun isAnyBox (v)
 	(or (= v box) (= v boxstar))
 )
@@ -136,10 +142,10 @@
   )
 
 ;
-; getKeeperPosition (s firstRow)
+; getKeeperPosition (s row)
 ; Returns a list indicating the position of the keeper (c r star).
 ; 
-; Assumes that the keeper is in row >= firstRow.
+; Assumes that the keeper is at a row index >= row.
 ; The top row is the zeroth row.
 ; The first (left) column is the zeroth column.
 ; star is T if the keeper is standing on a goal spot, NIL otherwise.
@@ -176,51 +182,26 @@
 	   );end t
 	);end cond
   );end 
- 
-;
-; countListContents (lst elem cnt)
-; Counts the number of times that elem appears in a list lst and adds it cnt.
-;
-; lst is a list (single level) and elem is an integer. Elements are compared using (=).
-; cnt is a running sum of the number of times elem has already appeared in the list.
-; Helper function for countStateContents.
-;
-(defun countListContents (lst elem cnt)
-	(cond
-		((null lst) cnt)
-		((= (car lst) elem) (countListContents (cdr lst) elem (+ 1 cnt)))
-		(t (countListContents (cdr lst) elem cnt))
-	)
-)
-
-;
-; countStateContents (s elem cnt)
-; Counts the number of times that elem appears in the state s and adds it to cnt.
-;
-; s is assumed to be a valid state (a list of lists) and elem is an integer. 
-; Elements are compared using (=). cnt is a running sum of the number of times 
-; elem has already appeared in the state (to allow for tail call recursion if present).
-; Helper function for goal-test.
-;
-(defun countStateContents (s elem cnt)
-	(cond
-		((null s) cnt)
-		(t (countStateContents (cdr s) elem (+ cnt (count elem (car s)))))
-		;(t (countStateContents (cdr s) elem (countListContents (car s) elem cnt)))
-	)
-)
 
 ; EXERCISE: Modify this function to return true (t)
 ; if and only if s is a goal state of the game.
 ; (neither any boxes nor the keeper is on a non-goal square)
 ;
-; Currently, it always returns NIL. If A* is called with
-; this function as the goal testing function, A* will never
-; terminate until the whole search space is exhausted.
-;
 (defun goal-test (s)
-  (and (= 0 (countStateContents s box 0)) (= 0 (countStateContents s keeper 0)))
+	; Checks if there are any boxes (or the keeper) not on goals
+	; This will pass any time there are no movable entities not in a goal, as per the spec.
+	; That includes a null state as well.
+	(cond
+		((null s) t)
+		((> (count box (car s)) 0) nil)
+		((> (count keeper (car s)) 0) nil)
+		(t (goal-test (cdr s)))
+	)
   );end defun
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; State accessors and mutators
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;
 ; getColumnSeq (s col row len hist)
@@ -359,7 +340,7 @@
 ; swap (s)
 ; Swaps the two-element list s, so the first element becomes the second and vice-versa.
 ;
-; Helper function of getDirection and try-move.
+; Helper function for getDirection and try-move.
 ;
 (defun swap (s)
 	(list (cadr s) (car s))
@@ -381,6 +362,14 @@
 	)
 )
 
+;
+; try-move (s x y dir wasstar)
+; Attempts to move in the direction dir from the keeper position (x y) in state s. If the move is legal, 
+; returns the state after moving. If the move is not legal, returns nil.
+;
+; wasstar = 0 indicates that the keeper was standing on a blank space; wasstar = 1 indicates the keeper
+; was already standing on a goal. This is an optimization for modifying the returned state.
+;
 (defun try-move (s x y dir wasstar)
 	(let ((newState (validateMove (getDirection s x y dir))))
 		(cond
@@ -397,28 +386,12 @@
 	)
 )
 
-; use length to get the length of the list as bounds
-
 ; EXERCISE: Modify this function to return the list of 
 ; successor states of s.
 ;
-; This is the top-level next-states (successor) function.
-; Some skeleton code is provided below.
-; You may delete them totally, depending on your approach.
-; 
-; If you want to use it, you will need to set 'result' to be 
-; the set of states after moving the keeper in each of the 4 directions.
-; A pseudo-code for this is:
-; 
-; ...
-; (result (list (try-move s UP) (try-move s DOWN) (try-move s LEFT) (try-move s RIGHT)))
-; ...
-; 
-; You will need to define the function try-move and decide how to represent UP,DOWN,LEFT,RIGHT.
-; Any NIL result returned from try-move can be removed by cleanUpList.
-; 
-;
 (defun next-states (s)
+  ; Basically follows skeleton code suggestion of using a try-move function and trying each of the
+  ; four cardinal directions, then using cleanUpList to remove null values
   (let* ((pos (getKeeperPosition s 0))
 	 (x (car pos))
 	 (y (cadr pos))
@@ -435,6 +408,22 @@
 ;
 (defun h0 (s)
 	0
+)
+
+;
+; countStateContents (s elem cnt)
+; Counts the number of times that elem appears in the state s and adds it to cnt.
+;
+; s is assumed to be a valid state (a list of lists) and elem is an integer. 
+; Elements are compared using (=). cnt is a running sum of the number of times 
+; elem has already appeared in the state (to allow for tail call recursion if present).
+; Helper function for h1.
+;
+(defun countStateContents (s elem cnt)
+	(cond
+		((null s) cnt)
+		(t (countStateContents (cdr s) elem (+ cnt (count elem (car s)))))
+	)
 )
 
 ; EXERCISE: Modify this function to compute the 
@@ -490,6 +479,8 @@
 ; get-square (s r c)
 ; Gets the square in s located at row r and column c. If (c r) is out of bounds, returns a wall instead.
 ;
+; This should be slightly faster for single element access compared to getRowSeq and getColSeq (and it's
+; easier to make it safe by checking for out-of-bounds access)
 ; Helper function for is-deadlocked.
 ;
 (defun get-square (s r c)
@@ -521,6 +512,8 @@
 ; set-square (s r c elem)
 ; Returns a copy of s with the element at (c r) equal to elem. If (c r) is out of bounds, returns s.
 ;
+; This might be slightly faster than setRowSeq and setColSeq for single elements. I was trying for small
+; efficiency gains here.
 ; Helper function for is-deadlocked.
 ;
 (defun set-square (s r c elem)
@@ -535,18 +528,20 @@
 
 ;
 ; is-deadlocked-axis (s p axis)
-; Checks if the point at p in s is deadlocked along axis (0 = horizontal, 1 = vertical). A box is
+; Checks if the point at p in s is deadlocked along an axis (0 = horizontal, 1 = vertical). A box is
 ; deadlocked if there are walls or deadlocked boxes vertically or horizontally.
 ;
+; Recursively checks if another box is blocking the axis, which requires modifying the state to avoid
+; infinite recursion.
 ; Helper function for sum-min-dist.
 ;
 (defun is-deadlocked-axis (s p axis)
 	(let ((x (car p)) (y (cadr p)))
-		(if (= axis 0) ; 0 is the x axis
+		(if (= axis 0) ; 0 is the x (horizontal) axis
 			(let ((left (get-square s y (- x 1)))
 				(right (get-square s y (+ x 1))))
 				(or (isWall left) (isWall right)
-					(and (isAnyBox left) (is-deadlocked-axis (set-square s y x wall) (list (- x 1) y) 1)) ; Need to update state
+					(and (isAnyBox left) (is-deadlocked-axis (set-square s y x wall) (list (- x 1) y) 1))
 					(and (isAnyBox right) (is-deadlocked-axis (set-square s y x wall) (list (+ x 1) y) 1))
 				)
 			)
@@ -563,7 +558,7 @@
 
 ;
 ; is-deadlocked-2 (s p)
-; Convenience function to check both axes with is-deadlocked-axis. Alternative to is-deadlocked, which
+; Convenience function to check both axes with is-deadlocked-axis. Alternative to is-deadlocked that
 ; checks for deadlock by walls and other boxes.
 ;
 ; Helper function for sum-min-dist.
@@ -646,6 +641,8 @@
 	; This heuristic counts the manhattan distance from every unmatched box to the nearest unoccupied
 	; goal. This is an admissable heuristic, since that is the minimum number of steps for every box
 	; to reach a goal.
+	; It will also do some pruning for states which are unsolvable (e.g. a box not on a goal is blocked
+	; from moving in any direction)
 	(let* ((counts (findStateContents s 0 nil nil))
 		(boxes (car counts))
 		(goals (cadr counts)))
