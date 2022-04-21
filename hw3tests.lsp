@@ -13,11 +13,6 @@
 (assert (equal (cleanUpList '(0 1 nil 2 3 nil 4 5)) '(0 1 2 3 4 5)))
 (print "All test cases passed for cleanUpList")
 
-(assert (equal (countListContents '(0 1 1 0 0 0 1 2 1) 2 0) 1))
-(assert (equal (countListContents '() 0 2) 2))
-(assert (equal (countListContents '(0 1 1 0 0 0 1 2 1) 1 1) 5))
-(print "All test cases passed for countListContents")
-
 (assert (equal (countStateContents '((1 2) (3 4) (5 6)) 3 0) 1))
 (assert (equal (countStateContents '((0 0 0) (1 1 1) (2 2 2)) 2 2) 5))
 (assert (equal (countStateContents '() 2 3) 3))
