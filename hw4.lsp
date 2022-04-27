@@ -10,25 +10,13 @@
   (load "hw4tests.lsp")
 )
 
-(defun f1 ()
-  (solve-cnf "./cnfs/f1/sat_f1.cnf")
-)
-
-(defun f2 ()
-  (solve-cnf "./cnfs/f2/sat_f2.cnf")
-)
-
-(defun f3 ()
-  (solve-cnf "./cnfs/f3/sat_f3.cnf")
-)
-
 ; EXERCISE: Modify this function to decide satisifiability of delta.
 ; If delta is satisfiable, sat? returns a list of n integers that represents a model of delta,  
 ; otherwise it returns NIL. (See spec for details.)
 ; param n: number of variables in delta
 ; param delta: a CNF represented as a list of lists
 (defun sat? (n delta)
-  (sat-iterative 1 n delta nil)
+  (sat-iterative 1 n (remove-null delta nil) nil)
 )
 
 (defun remove-null (lst newl)

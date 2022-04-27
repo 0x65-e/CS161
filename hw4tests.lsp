@@ -21,3 +21,67 @@
 (print "All test cases passed for remove-constraints")
 
 (print "ALL TEST CASES PASSED")
+
+
+(defun f1 ()
+  (time (assert (solve-cnf "./cnfs/f1/sat_f1.cnf")))
+)
+
+(defun f2 ()
+  (time (assert (solve-cnf "./cnfs/f2/sat_f2.cnf")))
+)
+
+(defun f3 ()
+  (time (assert (solve-cnf "./cnfs/f3/sat_f3.cnf")))
+)
+
+(defun uf20 ()
+    (loop for i from 1 to 1000
+      do (time (print (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i))))
+    )
+)
+
+(defun uf20-i (i)
+    (time (print (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i))))
+)
+
+(defun uf20-rand ()
+    (let* ((*random-state* (make-random-state t)) (i (random 1000)))
+        (print i)
+        (time (print (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i))))
+    )
+)
+
+(defun uf50 ()
+    (loop for i from 1 to 1000
+      do (time (print (solve-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))))
+    )
+)
+
+(defun uf50-i (i)
+    (time (print (solve-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))))
+)
+
+(defun uf50-rand ()
+    (let* ((*random-state* (make-random-state t)) (i (random 1000)))
+        (print i)
+        (time (print (solve-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))))
+    )
+)
+
+(defun uuf50 ()
+    (loop for i from 1 to 1000
+      do (time (assert (not (solve-cnf (format nil "./cnfs/uuf50-218/uuf50-0~d.cnf" i)))))
+    )
+)
+
+(defun uuf50-i (i)
+    (time (assert (not (solve-cnf (format nil "./cnfs/uuf50-218/uuf50-0~d.cnf" i)))))
+)
+
+(defun uuf50-rand ()
+    (let* ((*random-state* (make-random-state t)) (i (random 1000)))
+        (print i)
+        (time (assert (not (solve-cnf (format nil "./cnfs/uuf50-218/uuf50-0~d.cnf" i)))))
+    )
+)
