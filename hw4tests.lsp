@@ -5,26 +5,21 @@
 (assert (equal (remove-null nil nil) nil))
 (print "All test cases passed for remove-null")
 
-(assert (equal (removet '(1 2 3 4 5 6) nil) '(6 5 4 3 2 1)))
-(assert (equal (removet '(1 t 2 t 3 4 5 t 6) nil) '(6 5 4 3 2 1)))
-(assert (equal (removet nil nil) nil))
-(print "All test cases passed for removet")
-
 ; TODO: Fix test cases
-(assert (equal (remove-or-eliminate '(1 2 3 4 5 6) 4 nil) t)) ; eliminate case
-(assert (equal (remove-or-eliminate '(1 2 3 4 5 6) -4 nil) '(6 5 3 2 1))) ; remove case
-(assert (equal (remove-or-eliminate '(1 2 3 4 5 6) 7 nil) '(6 5 4 3 2 1)))
-(assert (equal (remove-or-eliminate '(1 -2 -3 4 -5 6) -2 nil) t))
-(assert (equal (remove-or-eliminate '(1 2 -3 4 -5 6 2) -2 nil) '(6 -5 4 -3 1)))
-(assert (equal (remove-or-eliminate '(1 2 -3 4 -5 6 -2) -2 nil) t))
-(assert (equal (remove-or-eliminate '(2) -2 nil) nil))
-(assert (equal (remove-or-eliminate nil 1 nil) nil)) ; empty constraint is unsatisfiable
-(print "All test cases passed for remove-or-eliminate")
+(assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) 4 nil) t)) ; eliminate case
+(assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) -4 nil) '(6 5 3 2 1))) ; remove case
+(assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) 7 nil) '(6 5 4 3 2 1)))
+(assert (equal (resolve-or-satisfy '(1 -2 -3 4 -5 6) -2 nil) t))
+(assert (equal (resolve-or-satisfy '(1 2 -3 4 -5 6 2) -2 nil) '(6 -5 4 -3 1)))
+(assert (equal (resolve-or-satisfy '(1 2 -3 4 -5 6 -2) -2 nil) t))
+(assert (equal (resolve-or-satisfy '(2) -2 nil) nil))
+(assert (equal (resolve-or-satisfy nil 1 nil) nil)) ; empty constraint is unsatisfiable
+(print "All test cases passed for resolve-or-satisfy")
 
-(assert (equal (remove-constraints '((1 2) (3 4) (5 6)) 4 nil) '(t ((6 5) (2 1)))))
-(assert (equal (remove-constraints '((1 2) (-4) (5 6)) 4 nil) '(nil nil))) ; unsatisfiable
-(assert (equal (remove-constraints '((4)) 4 nil) '(t nil))) ; satisfied
-(print "All test cases passed for remove-constraints")
+(assert (equal (resolve-constraints '((1 2) (3 4) (5 6)) 4 nil) '(t ((6 5) (2 1)))))
+(assert (equal (resolve-constraints '((1 2) (-4) (5 6)) 4 nil) '(nil nil))) ; unsatisfiable
+(assert (equal (resolve-constraints '((4)) 4 nil) '(t nil))) ; satisfied
+(print "All test cases passed for resolve-constraints")
 
 (print "ALL TEST CASES PASSED")
 
