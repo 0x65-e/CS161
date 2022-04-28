@@ -5,7 +5,6 @@
 (assert (equal (remove-null nil nil) nil))
 (print "All test cases passed for remove-null")
 
-; TODO: Fix test cases
 (assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) 4 nil) t)) ; eliminate case
 (assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) -4 nil) '(6 5 3 2 1))) ; remove case
 (assert (equal (resolve-or-satisfy '(1 2 3 4 5 6) 7 nil) '(6 5 4 3 2 1)))
@@ -16,10 +15,29 @@
 (assert (equal (resolve-or-satisfy nil 1 nil) nil)) ; empty constraint is unsatisfiable
 (print "All test cases passed for resolve-or-satisfy")
 
-(assert (equal (resolve-constraints '((1 2) (3 4) (5 6)) 4 nil) '(t ((6 5) (2 1)))))
-(assert (equal (resolve-constraints '((1 2) (-4) (5 6)) 4 nil) '(nil nil))) ; unsatisfiable
+(assert (equal (resolve-constraints '((1 2) (3 4) (5 6)) 4 nil) '(t ((6 5) (2 1))))) ; satisfied constraint
+(assert (equal (resolve-constraints '((1 2) (3 -4) (5 6)) 4 nil) '(t ((6 5) (3) (2 1))))) ; resolved constraint
+(assert (equal (resolve-constraints '((1 2) (-4) (5 6)) 4 nil) '(nil nil))) ; unsatisfiable constraint
 (assert (equal (resolve-constraints '((4)) 4 nil) '(t nil))) ; satisfied
 (print "All test cases passed for resolve-constraints")
+
+(assert (equal (contains-abs '(1 2 3 4 5) 4 nil) 1)) ; positive case
+(assert (equal (contains-abs '(1 2 3 4 5) -4 nil) -1)) ; negative case
+(assert (equal (contains-abs '(1 2 3 4 5) 7 nil) nil)) ; not found
+(assert (equal (contains-abs '(1 2 2 2 3 4 5 6 -1) 1 nil) -1)) ; negative case should take precedence
+(assert (equal (contains-abs nil 1 nil) nil))
+(print "All test cases passed for contains-abs")
+
+(assert (equal (find-unit '((1 2) (3 4) (5 6))) nil)) ; no unit
+(assert (equal (find-unit '((1 2) (3) (5 6))) 3))
+(assert (equal (find-unit '((1 2) (3) (5 6) (7))) 3))
+(assert (equal (find-unit nil) nil))
+(print "All test cases passed for find-unit")
+
+(assert (equal (sat-preempt 1 3 '((1 -2 3) (-1) (-2 -3)) nil) '(3 -2 -1))) ; trivial example
+(assert (equal (sat-preempt 1 3 '((1 3) (-1 2) (-2) (-3)) nil) nil)) ; unsatisfiable
+(assert (equal (sat-preempt 1 3 '((1 -2) (-1) (-2)) '(-3)) '(-2 -1 -3))) ; force -3
+(print "All test cases passed for sat-preempt")
 
 (print "ALL TEST CASES PASSED")
 

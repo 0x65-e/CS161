@@ -86,6 +86,7 @@
 ;
 ; find-unit (delta)
 ; Finds a unit clause in delta (if it exists) and returns its value. If no unit clause exists, returns nil.
+; If there are multiple unit clauses, finds the first.
 ;
 (defun find-unit (delta)
   (let ((clause (car delta)))
