@@ -41,13 +41,12 @@
 
 (print "ALL TEST CASES PASSED")
 
+(defun trivial ()
+  (solve-cnf "./cnfs/3.cnf")
+)
 
 (defun f1 ()
   (time (assert (solve-cnf "./cnfs/f1/sat_f1.cnf")))
-)
-
-(defun trivial ()
-  (solve-cnf "./cnfs/3.cnf")
 )
 
 (defun f2 ()
@@ -58,12 +57,40 @@
   (time (assert (solve-cnf "./cnfs/f3/sat_f3.cnf")))
 )
 
+(defun verify (delta assignments)
+  (if (null assignments) 
+    (null delta)
+    (let ((newdelta (resolve-constraints delta (car assignments) nil)))
+      (if (car newdelta)
+        (verify (cadr newdelta) (cdr assignments))
+        nil
+      )
+    )
+  )
+)
+
+(defun correct? ()
+    (assert (verify (cdr (read-cnf "./cnfs/f1/sat_f1.cnf")) (solve-cnf "./cnfs/f1/sat_f1.cnf")))
+    (assert (verify (cdr (read-cnf "./cnfs/f2/sat_f2.cnf")) (solve-cnf "./cnfs/f2/sat_f2.cnf")))
+    (assert (verify (cdr (read-cnf "./cnfs/f3/sat_f3.cnf")) (solve-cnf "./cnfs/f3/sat_f3.cnf")))
+    "f1-f3 solutions verified"
+)
+
 (defun uf20 ()
     (time
+        (loop for i from 1 to 1000
+        do (assert (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i)))
+        )
+    )
+)
+
+(defun uf20-correct? ()
     (loop for i from 1 to 1000
-      do (assert (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i)))
+        do (assert (verify 
+        (remove-null (cdr (read-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i))) nil) 
+        (solve-cnf (format nil "./cnfs/uf20-91/uf20-0~d.cnf" i))))
     )
-    )
+    "uf20 solutions verified"
 )
 
 (defun uf20-i (i)
@@ -81,6 +108,15 @@
     (loop for i from 1 to 1000
       do (time (assert (solve-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))))
     )
+)
+
+(defun uf50-correct? ()
+    (loop for i from 1 to 1000
+        do (assert (verify 
+        (remove-null (cdr (read-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))) nil) 
+        (solve-cnf (format nil "./cnfs/uf50-218/uf50-0~d.cnf" i))))
+    )
+    "uf50 solutions verified"
 )
 
 (defun uf50-i (i)
