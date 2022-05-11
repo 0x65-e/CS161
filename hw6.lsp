@@ -13,41 +13,93 @@
   (load "hw6.lsp")
   );end defun
 
-; EXERCISE: Fill this function.
-; returns the index of the variable
-; that corresponds to the fact that 
-; "node n gets color c" (when there are k possible colors).
+; 
+; node2var (n c k)
+; 
+; returns the index of the variable that corresponds to the fact that 
+; "node n gets color c" (out of k possible colors)
 ;
 (defun node2var (n c k)
-  )
+	(+ c (* k (- n 1)))
+)
 
-; EXERCISE: Fill this function
+; 
+; at-least-one-color (n c k)
 ; returns *a clause* for the constraint:
 ; "node n gets at least one color from the set {c,c+1,...,k}."
 ;
 (defun at-least-one-color (n c k)
-  )
+	(if (> c k) 
+		nil
+		(cons (node2var n c k) (at-least-one-color n (+ c 1) k))
+	)
+)
 
-; EXERCISE: Fill this function
+; 
+; pairwise-constraints (n start end k constraints)
+; 
+; returns a list of all pairwise constraints for node n that prevent it from
+; being colored start and any color up to end (out of k possible colors)
+; e.g. {(start, start+1), (start, start+2), ..., (start, end)}
+; 
+; constraints is for TCO and should be called with nil at the top level.
+; Helper function for at-most-one-color.
+; 	
+(defun pairwise-constraints (n start end k constraints)
+	(if (>= start end)
+		constraints
+		(pairwise-constraints n start (- end 1) k (cons (list (- (node2var n start k)) (- (node2var n end k))) constraints))
+	)
+)
+
+; 
+; at-most-one-color (n c k)
+; 
 ; returns *a list of clauses* for the constraint:
 ; "node n gets at most one color from the set {c,c+1,...,k}."
 ;
 (defun at-most-one-color (n c k)
-  )
+	(if (> c k)
+		nil
+		(append (pairwise-constraints n c k k nil) (at-most-one-color n (+ c 1) k))
+	)
+)
 
-; EXERCISE: Fill this function
+; 
+; generate-node-clauses (n k)
+; 
 ; returns *a list of clauses* to ensure that
 ; "node n gets exactly one color from the set {1,2,...,k}."
 ;
 (defun generate-node-clauses (n k)
-  )
+	(cons (at-least-one-color n 1 k) (at-most-one-color n 1 k))
+)
 
-; EXERCISE: Fill this function
+; 
+; edge-clauses-rec (n1 n2 c k clauses)
+; 
+; returns a list of clauses that constrain nodes n1 and n2 from having the
+; same color from the set {c,c+1,...,k}
+; 
+; clauses is for TCO and should be called with nil at the top level.
+; Helper functino for generate-edge-clauses
+;
+(defun edge-clauses-rec (n1 n2 c k clauses)
+	(if (> c k)
+		clauses
+		(edge-clauses-rec n1 n2 (+ c 1) k (cons (list (- (node2var n1 c k)) (- (node2var n2 c k))) clauses))
+	)
+)
+
+; 
+; generate-edge-clauses (e k)
+; 
 ; returns *a list of clauses* to ensure that
 ; "the nodes at both ends of edge e cannot have the same color from the set {1,2,...,k}."
 ;
 (defun generate-edge-clauses (e k)
-  )
+	(edge-clauses-rec (car e) (cadr e) 1 k nil)
+)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Your exercises end here. Below are top-level
