@@ -1,0 +1,54 @@
+1.
+(a) {x/A, y/A, z/B}
+(b) No unifier exists
+(c) {x/B, y/A}
+(d) {x/John, y/John}
+(e) No unifier exists
+
+2.
+(a) 1. (A f)(Food(f) => Likes(John,f))
+    2. Food(Apples)
+    3. Food(Chicken)
+    4. (A g,h)([Eats(h,g) & ~Kills(g,h)] => Food(g))
+    5. (A x,y)(Kills(y,x) => ~Alive(x))
+    6. Eats(Bill, Peanuts) & Alive(Bill)
+	7. (A j)(Eats(Bill,j) => Eats(Sue,j))
+	
+(b) 1. ~Food(f) | Likes(John,f)
+    2. Food(Apples)
+	3. Food(Chicken)
+	4. ~Eats(h,g) | Kills(g,h) | Food(g)
+	5. ~Kills(y,x) | ~Alive(x)
+	6a. Eats(Bill,Peanuts)
+	6b. Alive(Bill)
+	7. ~Eats(Bill,j) | Eats(Sue,j)
+	
+(c) We add in term 0. ~Likes(John,Peanuts) and search for a contradiction.
+    8. Kills(Peanuts,Bill) | Food(Peanuts) 		by unifying 6a and 4 via {g/Peanuts, h/Bill}
+    9. ~Kills(y,Bill) 							by unifying 6b and 5 via {x/Bill}
+	10. Food(Peanuts) 							by unifying 9 and 8 via {y/Peanuts}
+	11. Likes(John,Peanuts) 					by unifying 10 and 1 via {x/Peanuts}
+	We can then unify 0 and 11 to find an empty clause, which means we cannot add ~Likes(John,Peanuts) to the KB, so we can conclude that John likes peanuts.
+
+(d) 12. Eats(Sue,Peanuts)						by unifying 6a and 7 via {x/Peanuts}
+    This is the only thing we can prove that Sue eats by resolution, since there is nothing else we could possibly resolve with ~Eats(Bill,j) to unify with j, because there is no other term of the form Eats(Bill,c), only negative terms ~Eats(.) which won't help us here.
+
+(e) Instead of 6a and 6b we have: 
+    6a. Eats(p,F(p)) | Dies(p)		[formed from the rule (A p)(~[(E q)(Eats(p,q))] => Dies(p))]
+	6b. ~Dies(k) | ~Alive(k)		[formed from the rule Dies(k) => ~Alive(k)]
+	6c. Alive(Bill)
+	Then through resolution:
+	8. ~Dies(Bill)					by unifying 6b and 6b via {k/Bill}
+	9. Eats(Bill,F(Bill))			by unifying 6a and 8 via {p/Bill}
+	10. ~Kills(y,Bill)				by unifying 5 and 6c via {x/Bill}
+	11. ~Eats(Bill,y) | Food(y)		by unifying 10 and 4 via {g/y,h/Bill}
+	12. Food(F(Bill))				by unifying 11 and 9 via {y/F(Bill)}
+	13. Eats(Sue,F(Bill))			by unifying 9 and 7 via {j/F(Bill)}
+	This is as far as we can resolve. The only other constants we have are Apples, Chicken, and John, and none of those can be unified with F(Bill) since we cannot obtain any negative term ~Food(.) with either of them, nor ~Eats(.). Thus, we can say that Bill must eat something [whatever F(Bill) maps to] and that Sue also eats the same thing(s), but that's all that we can answer.
+
+3.
+(1) No, it is not satisfiable.
+(2) Yes, it is satisfiable.
+(3) The graph requires a minimum of 4 colors to color.
+    The RSat solution corresponds to the colors, from node 1 to node 7: (4, 3, 2, 3, 1, 2, 1)
+(4) The minimum number of colors is 8.
